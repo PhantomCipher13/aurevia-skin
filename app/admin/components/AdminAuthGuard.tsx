@@ -1,27 +1,32 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState, useRef, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminAuthGuard({ children }: { children: ReactNode }) {
-  const router   = useRouter();
   const pathname = usePathname();
-  const sb       = createClient();
-  const [authorized, setAuthorized] = useState(false);
+  const [status, setStatus] = useState<"loading" | "ok" | "redirect">("loading");
+  const checked = useRef(false);
 
   useEffect(() => {
-    // If we are on the login page, don't block rendering. The login page handles its own auth redirection.
+    // Login page: never block it, always show it
     if (pathname.startsWith("/admin/login")) {
-      setAuthorized(true);
+      setStatus("ok");
       return;
     }
 
-    const check = async () => {
+    // Only run the check once per mount — never re-run on re-renders
+    if (checked.current) return;
+    checked.current = true;
+
+    (async () => {
+      const sb = createClient();
       const { data: { session } } = await sb.auth.getSession();
 
       if (!session?.user) {
-        window.location.href = `/admin/login?redirect=${encodeURIComponent(pathname)}`;
+        // Not logged in — go to login page
+        window.location.replace("/admin/login");
         return;
       }
 
@@ -32,27 +37,24 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
         .single();
 
       if (!profile?.is_admin) {
+        // Logged in but not admin — sign out and go to login
         await sb.auth.signOut();
-        window.location.href = "/admin/login";
+        window.location.replace("/admin/login");
         return;
       }
 
-      setAuthorized(true);
-    };
+      // All good — show the dashboard
+      setStatus("ok");
+    })();
+  }, [pathname]);
 
-    check();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = sb.auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT") window.location.href = "/admin/login"; });
-
-    return () => subscription.unsubscribe();
-  }, [router, pathname]);
-
-  if (!authorized) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#0D0B09" }}>
-        <div className="w-8 h-8 rounded-full border-2 border-transparent animate-spin"
-          style={{ borderTopColor: "#C7A064", borderRightColor: "rgba(199,160,100,0.3)" }} />
+        <div
+          className="w-8 h-8 rounded-full border-2 border-transparent animate-spin"
+          style={{ borderTopColor: "#C7A064", borderRightColor: "rgba(199,160,100,0.3)" }}
+        />
       </div>
     );
   }

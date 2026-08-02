@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface AdminHeaderProps {
@@ -12,24 +10,10 @@ interface AdminHeaderProps {
 }
 
 export default function AdminHeader({ title, subtitle, action }: AdminHeaderProps) {
-  const router = useRouter();
-  const sb = createClient();
-  const [adminName, setAdminName] = useState("Admin");
-  const [adminEmail, setAdminEmail] = useState("");
-
-  useEffect(() => {
-    sb.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setAdminEmail(session.user.email ?? "");
-        sb.from("profiles").select("full_name").eq("id", session.user.id).single()
-          .then(({ data }) => { if (data?.full_name) setAdminName(data.full_name); });
-      }
-    });
-  }, []);
-
   const handleLogout = async () => {
+    const sb = createClient();
     await sb.auth.signOut();
-    router.push("/admin/login");
+    window.location.replace("/admin/login");
   };
 
   return (
@@ -79,7 +63,6 @@ export default function AdminHeader({ title, subtitle, action }: AdminHeaderProp
           )
         )}
 
-
         {/* View Store */}
         <Link
           href="/"
@@ -94,40 +77,18 @@ export default function AdminHeader({ title, subtitle, action }: AdminHeaderProp
           </svg>
         </Link>
 
-        {/* User + logout */}
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-semibold"
-            style={{ background: "rgba(199,160,100,0.2)", color: "#C7A064" }}
-          >
-            {adminName?.charAt(0).toUpperCase() ?? "A"}
-          </div>
-          <div className="hidden md:block">
-            <p
-              className="text-[12px] font-medium"
-              style={{ fontFamily: "var(--font-body)", color: "#EAD9C3" }}
-            >
-              {adminName}
-            </p>
-            <p
-              className="text-[10px]"
-              style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.4)" }}
-            >
-              {adminEmail || "Administrator"}
-            </p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-400"
-            style={{ color: "rgba(234,217,195,0.35)" }}
-            aria-label="Sign out"
-            title="Sign out"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
-              <path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3M11 11l3-3-3-3M14 8H6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="p-2 rounded-lg transition-colors hover:bg-red-500/10 hover:text-red-400"
+          style={{ color: "rgba(234,217,195,0.35)" }}
+          aria-label="Sign out"
+          title="Sign out"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
+            <path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3M11 11l3-3-3-3M14 8H6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
     </header>
   );
