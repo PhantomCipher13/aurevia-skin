@@ -11,6 +11,12 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
+    // If we are on the login page, don't block rendering. The login page handles its own auth redirection.
+    if (pathname.startsWith("/admin/login")) {
+      setAuthorized(true);
+      return;
+    }
+
     const check = async () => {
       const { data: { session } } = await sb.auth.getSession();
 
