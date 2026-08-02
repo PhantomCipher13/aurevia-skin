@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
 export default function AdminLoginPage() {
+  const router = useRouter();
   const [email, setEmail]     = useState("");
   const [password, setPass]   = useState("");
   const [error, setError]     = useState("");
@@ -42,8 +44,10 @@ export default function AdminLoginPage() {
       return;
     }
 
-    // Success — hard navigate so the Auth Guard picks up the fresh session cookie
-    window.location.replace("/admin");
+    // Navigate to admin dashboard
+    // router.refresh() ensures the middleware re-reads the new session cookie
+    router.refresh();
+    router.push("/admin");
   };
 
   return (
@@ -59,10 +63,20 @@ export default function AdminLoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-10">
-          <h1 style={{ fontFamily: "var(--font-heading)", color: "#EAD9C3", fontSize: "28px", letterSpacing: "0.1em" }}>
+          <h1
+            style={{
+              fontFamily: "var(--font-heading)",
+              color: "#EAD9C3",
+              fontSize: "28px",
+              letterSpacing: "0.1em",
+            }}
+          >
             AUREVIA
           </h1>
-          <p className="mt-1.5 text-[10px] tracking-[0.25em] uppercase" style={{ color: "#C7A064", fontFamily: "var(--font-body)" }}>
+          <p
+            className="mt-1.5 text-[10px] tracking-[0.25em] uppercase"
+            style={{ color: "#C7A064", fontFamily: "var(--font-body)" }}
+          >
             Admin Portal
           </p>
         </div>
@@ -76,10 +90,19 @@ export default function AdminLoginPage() {
             border: "1px solid rgba(199,160,100,0.12)",
           }}
         >
-          <h2 className="text-[24px] mb-1" style={{ fontFamily: "var(--font-heading)", color: "#EAD9C3" }}>
+          <h2
+            className="text-[24px] mb-1"
+            style={{ fontFamily: "var(--font-heading)", color: "#EAD9C3" }}
+          >
             Admin Sign In
           </h2>
-          <p className="text-[12px] mb-8" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.35)" }}>
+          <p
+            className="text-[12px] mb-8"
+            style={{
+              fontFamily: "var(--font-body)",
+              color: "rgba(234,217,195,0.35)",
+            }}
+          >
             Enter your admin credentials to access the dashboard
           </p>
 
@@ -87,7 +110,10 @@ export default function AdminLoginPage() {
             <div>
               <label
                 className="block text-[10px] tracking-[0.15em] uppercase mb-2"
-                style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.35)" }}
+                style={{
+                  fontFamily: "var(--font-body)",
+                  color: "rgba(234,217,195,0.35)",
+                }}
               >
                 Admin Email
               </label>
@@ -96,7 +122,7 @@ export default function AdminLoginPage() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl text-[13px] outline-none transition-all"
                 style={{
                   background: "rgba(255,255,255,0.05)",
@@ -104,15 +130,20 @@ export default function AdminLoginPage() {
                   color: "#EAD9C3",
                   fontFamily: "var(--font-body)",
                 }}
-                onFocus={e => (e.target.style.borderColor = "#C7A064")}
-                onBlur={e => (e.target.style.borderColor = "rgba(199,160,100,0.15)")}
+                onFocus={(e) => (e.target.style.borderColor = "#C7A064")}
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(199,160,100,0.15)")
+                }
               />
             </div>
 
             <div>
               <label
                 className="block text-[10px] tracking-[0.15em] uppercase mb-2"
-                style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.35)" }}
+                style={{
+                  fontFamily: "var(--font-body)",
+                  color: "rgba(234,217,195,0.35)",
+                }}
               >
                 Password
               </label>
@@ -121,7 +152,7 @@ export default function AdminLoginPage() {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={e => setPass(e.target.value)}
+                onChange={(e) => setPass(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl text-[13px] outline-none transition-all"
                 style={{
                   background: "rgba(255,255,255,0.05)",
@@ -129,8 +160,10 @@ export default function AdminLoginPage() {
                   color: "#EAD9C3",
                   fontFamily: "var(--font-body)",
                 }}
-                onFocus={e => (e.target.style.borderColor = "#C7A064")}
-                onBlur={e => (e.target.style.borderColor = "rgba(199,160,100,0.15)")}
+                onFocus={(e) => (e.target.style.borderColor = "#C7A064")}
+                onBlur={(e) =>
+                  (e.target.style.borderColor = "rgba(199,160,100,0.15)")
+                }
               />
             </div>
 
@@ -167,11 +200,17 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-5 text-center" style={{ borderTop: "1px solid rgba(199,160,100,0.08)" }}>
+          <div
+            className="mt-6 pt-5 text-center"
+            style={{ borderTop: "1px solid rgba(199,160,100,0.08)" }}
+          >
             <Link
               href="/auth/login"
               className="text-[11px]"
-              style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.3)" }}
+              style={{
+                fontFamily: "var(--font-body)",
+                color: "rgba(234,217,195,0.3)",
+              }}
             >
               ← Back to Customer Login
             </Link>
