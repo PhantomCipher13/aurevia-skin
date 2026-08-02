@@ -43,9 +43,7 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
     check();
 
     // Listen for auth state changes
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = "/admin/login";
-    });
+    const { data: { subscription } } = sb.auth.onAuthStateChange((event) => { if (event === "SIGNED_OUT") window.location.href = "/admin/login"; });
 
     return () => subscription.unsubscribe();
   }, [router, pathname]);
