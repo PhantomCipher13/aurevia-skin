@@ -6,47 +6,52 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function AdminAuthGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [status, setStatus] = useState<"loading" | "ok" | "redirect">("loading");
+  const [status, setStatus] = useState<"loading" | "ok">("loading");
   const checked = useRef(false);
 
   useEffect(() => {
-    // Login page: never block it, always show it
+    // Login page: never block it
     if (pathname.startsWith("/admin/login")) {
       setStatus("ok");
       return;
     }
 
-    // Only run the check once per mount — never re-run on re-renders
+    // Only run the auth check once per page load
     if (checked.current) return;
     checked.current = true;
 
     (async () => {
-      const sb = createClient();
-      const { data: { session } } = await sb.auth.getSession();
+      try {
+        const sb = createClient();
 
-      if (!session?.user) {
-        // Not logged in — go to login page
+        // Use getUser() — this makes a real network call to verify the token
+        // getSession() can return stale/null data on first load with @supabase/ssr
+        const { data: { user }, error } = await sb.auth.getUser();
+
+        if (error || !user) {
+          window.location.replace("/admin/login");
+          return;
+        }
+
+        const { data: profile } = await sb
+          .from("profiles")
+          .select("is_admin")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile?.is_admin) {
+          await sb.auth.signOut();
+          window.location.replace("/admin/login");
+          return;
+        }
+
+        setStatus("ok");
+      } catch {
         window.location.replace("/admin/login");
-        return;
       }
-
-      const { data: profile } = await sb
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", session.user.id)
-        .single();
-
-      if (!profile?.is_admin) {
-        // Logged in but not admin — sign out and go to login
-        await sb.auth.signOut();
-        window.location.replace("/admin/login");
-        return;
-      }
-
-      // All good — show the dashboard
-      setStatus("ok");
     })();
-  }, [pathname]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (status === "loading") {
     return (
