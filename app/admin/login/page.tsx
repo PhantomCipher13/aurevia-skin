@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
       setCheck(false);
     };
     check();
-  }, [sb, router]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

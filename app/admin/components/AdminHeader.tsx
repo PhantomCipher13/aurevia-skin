@@ -25,7 +25,7 @@ export default function AdminHeader({ title, subtitle, action }: AdminHeaderProp
           .then(({ data }) => { if (data?.full_name) setAdminName(data.full_name); });
       }
     });
-  }, [sb]);
+  }, []);
 
   const handleLogout = async () => {
     await sb.auth.signOut();

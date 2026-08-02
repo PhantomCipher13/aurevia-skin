@@ -44,7 +44,7 @@ export default function AdminOrdersPage() {
     const rev = (data ?? []).filter(o => o.payment_status === "paid").reduce((s, o) => s + Number(o.total), 0);
     setRev(rev);
     setLoading(false);
-  }, [sb]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 

@@ -25,7 +25,7 @@ export default function AdminInventoryPage() {
       .order("quantity", { ascending: true });
     setInventory(data ?? []);
     setLoading(false);
-  }, [sb]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 

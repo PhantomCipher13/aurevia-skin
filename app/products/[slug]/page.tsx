@@ -51,7 +51,7 @@ export default function ProductPage() {
       setReviews(data ?? []);
     }
     setLoading(false);
-  }, [slug, sb]);
+  }, [slug]);
 
   useEffect(() => { load(); }, [load]);
 

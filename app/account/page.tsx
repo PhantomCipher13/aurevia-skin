@@ -69,7 +69,7 @@ export default function AccountPage() {
       setLoad(false);
     };
     load();
-  }, [section, user, profile, sb]);
+  }, [section, user, profile]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 

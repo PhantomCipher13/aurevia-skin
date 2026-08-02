@@ -26,7 +26,7 @@ export default function AdminReviewsPage() {
       .order("created_at", { ascending: false });
     setReviews(data ?? []);
     setLoading(false);
-  }, [sb]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 

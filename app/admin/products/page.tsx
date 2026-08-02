@@ -27,7 +27,7 @@ export default function AdminProductsPage() {
       .order("display_order");
     setProducts(data ?? []);
     setLoading(false);
-  }, [sb]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
