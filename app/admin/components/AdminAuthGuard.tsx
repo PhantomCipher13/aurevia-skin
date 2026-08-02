@@ -21,7 +21,7 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
       const { data: { session } } = await sb.auth.getSession();
 
       if (!session?.user) {
-        router.replace(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
+        window.location.href = `/admin/login?redirect=${encodeURIComponent(pathname)}`;
         return;
       }
 
@@ -33,7 +33,7 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
 
       if (!profile?.is_admin) {
         await sb.auth.signOut();
-        router.replace("/admin/login");
+        window.location.href = "/admin/login";
         return;
       }
 
@@ -44,7 +44,7 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
 
     // Listen for auth state changes
     const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
-      if (!session) router.replace("/admin/login");
+      if (!session) window.location.href = "/admin/login";
     });
 
     return () => subscription.unsubscribe();

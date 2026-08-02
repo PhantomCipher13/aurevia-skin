@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
       const { data: { session } } = await sb.auth.getSession();
       if (session?.user) {
         const { data } = await sb.from("profiles").select("is_admin").eq("id", session.user.id).single();
-        if (data?.is_admin) { router.replace("/admin"); return; }
+        if (data?.is_admin) { window.location.href = "/admin"; return; }
       }
       setCheck(false);
     };
@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.replace("/admin");
+    window.location.href = "/admin";
   };
 
   if (checking) return null;
@@ -129,14 +129,14 @@ export default function AdminLoginPage() {
             <button type="submit" disabled={loading}
               className="w-full py-3.5 rounded-xl text-[11px] tracking-[0.15em] uppercase font-semibold transition-all mt-2"
               style={{ background: loading ? "rgba(199,160,100,0.4)" : "#C7A064", color: "#fff", fontFamily: "var(--font-body)" }}>
-              {loading ? "Signing In…" : "Access Dashboard"}
+              {loading ? "Signing Inâ€¦" : "Access Dashboard"}
             </button>
           </form>
 
           <div className="mt-6 pt-5 text-center" style={{ borderTop: "1px solid rgba(199,160,100,0.08)" }}>
             <Link href="/auth/login" className="text-[11px]"
               style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.3)" }}>
-              ← Back to Customer Login
+              â† Back to Customer Login
             </Link>
           </div>
         </div>
