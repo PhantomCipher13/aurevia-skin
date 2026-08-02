@@ -56,7 +56,7 @@ export default function AdminDashboard() {
       .gte("created_at", sinceISO)
       .order("created_at", { ascending: false });
 
-    const revenue   = orders?.filter(o => o.payment_status === "paid").reduce((s, o) => s + Number(o.total), 0) ?? 0;
+    const revenue   = (orders || []).filter(o => o.payment_status === "paid").reduce((s, o) => s + Number(o.total), 0);
     const orderCount = orders?.length ?? 0;
 
     // New customers in period
