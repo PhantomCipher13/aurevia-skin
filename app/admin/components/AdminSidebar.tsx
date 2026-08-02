@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,9 +46,13 @@ const navSections = [
   },
 ];
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
+}
+
+export default function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <motion.aside
