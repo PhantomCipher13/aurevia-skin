@@ -134,7 +134,7 @@ function LoginForm() {
             <button type="submit" disabled={loading}
               className="w-full py-3.5 rounded-xl text-[12px] tracking-[0.12em] uppercase font-semibold transition-all mt-2"
               style={{ background: loading ? "rgba(199,160,100,0.5)" : "#C7A064", color: "#fff", fontFamily: "var(--font-body)" }}>
-              {loading ? "Signing In…" : "Sign In"}
+              {loading ? "Signing Inâ€¦" : "Sign In"}
             </button>
           </form>
 

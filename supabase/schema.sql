@@ -1,5 +1,5 @@
 -- ============================================================
--- AUREVIA SKIN — Complete Database Schema + Seed Data
+-- AUREVIA SKIN Ã¢â‚¬â€ Complete Database Schema + Seed Data
 -- Paste this entire file into Supabase SQL Editor and Run
 -- ============================================================
 
@@ -27,9 +27,7 @@ DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can view all profiles" ON public.profiles FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_admin = TRUE)
-);
+
 
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -89,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
 );
 
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Anyone can view active categories" ON public.categories;
+DROP POLICY IF EXISTS "Anyone can view categories" ON public.categories;
 DROP POLICY IF EXISTS "Admins manage categories" ON public.categories;
 CREATE POLICY "Anyone can view categories" ON public.categories FOR SELECT USING (TRUE);
 CREATE POLICY "Admins manage categories" ON public.categories FOR ALL USING (
@@ -111,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.collections (
 );
 
 ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Anyone can view active collections" ON public.collections;
+DROP POLICY IF EXISTS "Anyone can view collections" ON public.collections;
 DROP POLICY IF EXISTS "Admins manage collections" ON public.collections;
 CREATE POLICY "Anyone can view collections" ON public.collections FOR SELECT USING (TRUE);
 CREATE POLICY "Admins manage collections" ON public.collections FOR ALL USING (
@@ -242,6 +240,7 @@ CREATE TABLE IF NOT EXISTS public.coupons (
 ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can look up active coupon by code" ON public.coupons;
 DROP POLICY IF EXISTS "Admins manage coupons" ON public.coupons;
+DROP POLICY IF EXISTS "Anyone can look up coupon" ON public.coupons;
 CREATE POLICY "Anyone can look up coupon" ON public.coupons FOR SELECT USING (TRUE);
 CREATE POLICY "Admins manage coupons" ON public.coupons FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
@@ -350,18 +349,25 @@ DROP POLICY IF EXISTS "Anyone can track by order number" ON public.orders;
 
 CREATE POLICY "Users view own orders" ON public.orders FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Anyone can track by order number" ON public.orders FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "Users insert own orders" ON public.orders;
 CREATE POLICY "Users insert own orders" ON public.orders FOR INSERT WITH CHECK (TRUE);
+DROP POLICY IF EXISTS "Admins manage all orders" ON public.orders;
 CREATE POLICY "Admins manage all orders" ON public.orders FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
 );
+DROP POLICY IF EXISTS "Users view own order items" ON public.order_items;
 CREATE POLICY "Users view own order items" ON public.order_items FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND user_id = auth.uid())
 );
+DROP POLICY IF EXISTS "Insert order items" ON public.order_items;
 CREATE POLICY "Insert order items" ON public.order_items FOR INSERT WITH CHECK (TRUE);
+DROP POLICY IF EXISTS "Admins manage order items" ON public.order_items;
 CREATE POLICY "Admins manage order items" ON public.order_items FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
 );
+DROP POLICY IF EXISTS "Anyone view timeline" ON public.order_timeline;
 CREATE POLICY "Anyone view timeline" ON public.order_timeline FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS "Admins manage timeline" ON public.order_timeline;
 CREATE POLICY "Admins manage timeline" ON public.order_timeline FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
 );
@@ -396,6 +402,7 @@ DROP POLICY IF EXISTS "Anyone can view approved reviews" ON public.reviews;
 DROP POLICY IF EXISTS "Users can add reviews" ON public.reviews;
 DROP POLICY IF EXISTS "Admins manage all reviews" ON public.reviews;
 CREATE POLICY "Anyone can view approved reviews" ON public.reviews FOR SELECT USING (is_approved = TRUE);
+DROP POLICY IF EXISTS "Anyone can submit review" ON public.reviews;
 CREATE POLICY "Anyone can submit review" ON public.reviews FOR INSERT WITH CHECK (TRUE);
 CREATE POLICY "Admins manage all reviews" ON public.reviews FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
@@ -551,14 +558,17 @@ CREATE TABLE IF NOT EXISTS public.product_qa (
 );
 
 ALTER TABLE public.product_qa ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can view published QA" ON public.product_qa;
 CREATE POLICY "Anyone can view published QA" ON public.product_qa FOR SELECT USING (is_published = TRUE);
+DROP POLICY IF EXISTS "Anyone can ask question" ON public.product_qa;
 CREATE POLICY "Anyone can ask question" ON public.product_qa FOR INSERT WITH CHECK (TRUE);
+DROP POLICY IF EXISTS "Admins manage QA" ON public.product_qa;
 CREATE POLICY "Admins manage QA" ON public.product_qa FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = TRUE)
 );
 
 -- ============================================================
--- 19. SEED DATA — Categories
+-- 19. SEED DATA Ã¢â‚¬â€ Categories
 -- ============================================================
 INSERT INTO public.categories (name, slug, description, display_order) VALUES
   ('Serums', 'serums', 'Concentrated treatments for targeted skin concerns', 1),
@@ -572,7 +582,7 @@ INSERT INTO public.categories (name, slug, description, display_order) VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- ============================================================
--- 20. SEED DATA — Collections
+-- 20. SEED DATA Ã¢â‚¬â€ Collections
 -- ============================================================
 INSERT INTO public.collections (name, slug, description, display_order) VALUES
   ('Bestsellers', 'bestsellers', 'Our most-loved products loved by thousands', 1),
@@ -583,7 +593,7 @@ INSERT INTO public.collections (name, slug, description, display_order) VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- ============================================================
--- 21. SEED DATA — Products (15 products, prices in INR)
+-- 21. SEED DATA Ã¢â‚¬â€ Products (15 products, prices in INR)
 -- ============================================================
 INSERT INTO public.products (name, slug, description, long_description, price, sku, is_featured, size, details, ingredients, how_to_use, skin_type, concern, display_order)
 SELECT name, slug, description, long_description, price, sku, is_featured, size, details, ingredients, how_to_use, skin_type, concern, display_order
@@ -595,9 +605,9 @@ FROM (VALUES
     'Our bestselling vitamin C serum packed with 10% stabilised ascorbic acid, hyaluronic acid and niacinamide to brighten, hydrate and even skin tone. Clinically tested and dermatologist approved for all skin types.',
     1899.00, 'AUR-SRM-001', TRUE,
     '30ml / 1 fl oz',
-    'Fragrance-free · Paraben-free · Dermatologist tested · Suitable for all skin types',
+    'Fragrance-free Ã‚Â· Paraben-free Ã‚Â· Dermatologist tested Ã‚Â· Suitable for all skin types',
     'Aqua, Ascorbic Acid 10%, Sodium Hyaluronate, Niacinamide 5%, Glycerin, Panthenol, Allantoin, Tocopherol, Citric Acid',
-    'Apply 3–4 drops to clean, dry skin morning and evening. Press gently into face, neck and décolletage. Follow with moisturiser and SPF in the morning.',
+    'Apply 3Ã¢â‚¬â€œ4 drops to clean, dry skin morning and evening. Press gently into face, neck and dÃƒÂ©colletage. Follow with moisturiser and SPF in the morning.',
     'All Skin Types', 'Brightening, Hyperpigmentation, Uneven Tone', 1
   ),
   (
@@ -607,7 +617,7 @@ FROM (VALUES
     'An ultra-light, fast-absorbing moisturiser that delivers 72-hour hydration. Formulated with ceramides and peptides to strengthen the skin barrier and prevent moisture loss throughout the day.',
     1699.00, 'AUR-CRM-001', TRUE,
     '50ml / 1.7 fl oz',
-    'Fragrance-free · Non-comedogenic · Dermatologist tested · For all skin types',
+    'Fragrance-free Ã‚Â· Non-comedogenic Ã‚Â· Dermatologist tested Ã‚Â· For all skin types',
     'Aqua, Glycerin, Ceramide NP, Ceramide AP, Ceramide EOP, Cholesterol, Niacinamide, Sodium Hyaluronate, Panthenol, Carbomer',
     'Apply a pearl-sized amount to face and neck morning and evening after serum. Smooth gently in upward circular motions.',
     'All Skin Types', 'Hydration, Dry Skin, Barrier Repair', 2
@@ -619,9 +629,9 @@ FROM (VALUES
     'A refreshing mist that locks in moisture, soothes redness and protects your skin barrier throughout the day. Infused with centella asiatica and rose water for instant calming and hydration.',
     1199.00, 'AUR-MST-001', FALSE,
     '100ml / 3.4 fl oz',
-    'Alcohol-free · Fragrance-free · Suitable for sensitive skin',
+    'Alcohol-free Ã‚Â· Fragrance-free Ã‚Â· Suitable for sensitive skin',
     'Aqua, Centella Asiatica Extract, Sodium Hyaluronate, Rosa Damascena Water, Panthenol, Glycerin, Aloe Barbadensis Leaf Juice',
-    'Shake gently. Hold bottle 20–30cm from face and mist evenly. Use over makeup or on bare skin anytime for a hydration boost.',
+    'Shake gently. Hold bottle 20Ã¢â‚¬â€œ30cm from face and mist evenly. Use over makeup or on bare skin anytime for a hydration boost.',
     'Sensitive, Dry, Combination', 'Redness, Sensitivity, Hydration', 3
   ),
   (
@@ -631,9 +641,9 @@ FROM (VALUES
     'A luxurious blend of plant-based oils with bakuchiol (a natural retinol alternative) and peptides to support skin renewal overnight. Wake up to visibly firmer, more radiant skin.',
     2299.00, 'AUR-OIL-001', TRUE,
     '30ml / 1 fl oz',
-    'Vegan · Cruelty-free · Cold-pressed oils · Suitable for dry and mature skin',
+    'Vegan Ã‚Â· Cruelty-free Ã‚Â· Cold-pressed oils Ã‚Â· Suitable for dry and mature skin',
     'Squalane, Rosa Canina Seed Oil, Simmondsia Chinensis Seed Oil, Bakuchiol 1%, Peptide Complex, Tocopherol, Evening Primrose Oil',
-    'Apply 4–5 drops to face and neck as the last step in your evening routine. Gently press into skin and allow to fully absorb before sleep.',
+    'Apply 4Ã¢â‚¬â€œ5 drops to face and neck as the last step in your evening routine. Gently press into skin and allow to fully absorb before sleep.',
     'Dry, Mature, Normal', 'Anti-aging, Firmness, Overnight Repair', 4
   ),
   (
@@ -643,9 +653,9 @@ FROM (VALUES
     'A potent vitamin C serum with 15% L-ascorbic acid, ferulic acid and vitamin E for enhanced stability and efficacy. Visibly reduces dark spots and boosts collagen production for brighter, younger-looking skin.',
     2199.00, 'AUR-VCS-001', TRUE,
     '30ml / 1 fl oz',
-    'Clinically tested · Vegan · Paraben-free · Suitable for normal to oily skin',
+    'Clinically tested Ã‚Â· Vegan Ã‚Â· Paraben-free Ã‚Â· Suitable for normal to oily skin',
     'Aqua, Ascorbic Acid 15%, Ferulic Acid, Tocopherol, Zinc Sulphate, Sodium Hyaluronate, Glycerin, Citric Acid',
-    'Apply 2–3 drops to cleansed skin in the morning before moisturiser. Always follow with SPF. Start with every other day if new to vitamin C.',
+    'Apply 2Ã¢â‚¬â€œ3 drops to cleansed skin in the morning before moisturiser. Always follow with SPF. Start with every other day if new to vitamin C.',
     'Normal, Oily, Combination', 'Dark Spots, Dullness, Anti-aging', 5
   ),
   (
@@ -655,9 +665,9 @@ FROM (VALUES
     'A gentle yet effective encapsulated retinol serum that minimises irritation while delivering clinically proven results. Reduces fine lines, improves skin texture and increases cell turnover for visibly younger-looking skin.',
     2499.00, 'AUR-RTS-001', TRUE,
     '30ml / 1 fl oz',
-    'Encapsulated retinol for reduced irritation · Dermatologist tested · Fragrance-free',
+    'Encapsulated retinol for reduced irritation Ã‚Â· Dermatologist tested Ã‚Â· Fragrance-free',
     'Aqua, Retinol 0.3% (Encapsulated), Sodium Hyaluronate, Niacinamide, Glycerin, Squalane, Allantoin, Tocopherol',
-    'Apply 3–4 drops to face and neck at night only, after cleansing. Avoid eye area. Start 2–3 times per week and increase gradually. Always use SPF during the day.',
+    'Apply 3Ã¢â‚¬â€œ4 drops to face and neck at night only, after cleansing. Avoid eye area. Start 2Ã¢â‚¬â€œ3 times per week and increase gradually. Always use SPF during the day.',
     'Normal, Oily, Combination, Mature', 'Fine Lines, Wrinkles, Texture, Anti-aging', 6
   ),
   (
@@ -667,9 +677,9 @@ FROM (VALUES
     'A concentrated peptide serum with 6 clinically studied peptides that signal the skin to produce more collagen and elastin. Visibly firms, plumps and smooths skin texture with consistent use.',
     2799.00, 'AUR-PFS-001', FALSE,
     '30ml / 1 fl oz',
-    'Vegan · Cruelty-free · Fragrance-free · For all skin types',
+    'Vegan Ã‚Â· Cruelty-free Ã‚Â· Fragrance-free Ã‚Â· For all skin types',
     'Aqua, Acetyl Hexapeptide-3, Palmitoyl Tripeptide-1, Palmitoyl Tetrapeptide-7, Copper Tripeptide-1, Sodium Hyaluronate, Glycerin, Niacinamide',
-    'Apply 3–4 drops to clean skin morning and evening. May be mixed with moisturiser or layered under it. Safe for use around eye area.',
+    'Apply 3Ã¢â‚¬â€œ4 drops to clean skin morning and evening. May be mixed with moisturiser or layered under it. Safe for use around eye area.',
     'All Skin Types', 'Firmness, Fine Lines, Loss of Elasticity', 7
   ),
   (
@@ -679,9 +689,9 @@ FROM (VALUES
     'A pH-balanced, soap-free foam cleanser that effectively removes makeup, impurities and excess oil without stripping the skin\'s natural moisture. Leaves skin feeling clean, soft and perfectly balanced.',
     899.00, 'AUR-CLN-001', FALSE,
     '150ml / 5.1 fl oz',
-    'pH-balanced · Soap-free · Fragrance-free · Suitable for all skin types',
+    'pH-balanced Ã‚Â· Soap-free Ã‚Â· Fragrance-free Ã‚Â· Suitable for all skin types',
     'Aqua, Cocamidopropyl Betaine, Sodium Lauroyl Sarcosinate, Glycerin, Panthenol, Centella Asiatica Extract, Allantoin, Citric Acid',
-    'Wet face with lukewarm water. Pump 1–2 times onto palm and work into a lather. Massage gently onto face for 60 seconds. Rinse thoroughly.',
+    'Wet face with lukewarm water. Pump 1Ã¢â‚¬â€œ2 times onto palm and work into a lather. Massage gently onto face for 60 seconds. Rinse thoroughly.',
     'All Skin Types', 'Cleansing, Pore Care', 8
   ),
   (
@@ -691,7 +701,7 @@ FROM (VALUES
     'A lightweight, alcohol-free toner with 10% niacinamide and zinc that minimises pores, controls excess oil and visibly reduces blemishes. Works to even skin tone and brighten dull skin with consistent use.',
     999.00, 'AUR-TNR-001', FALSE,
     '200ml / 6.8 fl oz',
-    'Alcohol-free · Fragrance-free · Non-comedogenic · Suitable for oily and acne-prone skin',
+    'Alcohol-free Ã‚Â· Fragrance-free Ã‚Â· Non-comedogenic Ã‚Â· Suitable for oily and acne-prone skin',
     'Aqua, Niacinamide 10%, Zinc PCA, Sodium Hyaluronate, Glycerin, Panthenol, Allantoin, Potassium Azeloyl Diglycinate',
     'After cleansing, soak a cotton pad and sweep gently across face, avoiding eye area. Or apply directly with palms and pat into skin. Use morning and evening.',
     'Oily, Combination, Acne-prone', 'Pores, Oiliness, Blemishes, Uneven Tone', 9
@@ -703,7 +713,7 @@ FROM (VALUES
     'A lightweight mineral sunscreen with 100% physical filters that provides broad-spectrum UVA/UVB protection. Developed specifically for Indian skin tones with zero white cast, comfortable texture and antioxidant protection.',
     1799.00, 'AUR-SPF-001', FALSE,
     '50ml / 1.7 fl oz',
-    'Mineral filters · PA++++ · No white cast · Water-resistant 80 min · Fragrance-free',
+    'Mineral filters Ã‚Â· PA++++ Ã‚Â· No white cast Ã‚Â· Water-resistant 80 min Ã‚Â· Fragrance-free',
     'Zinc Oxide 15%, Titanium Dioxide 5%, Aqua, Cyclopentasiloxane, Niacinamide, Tocopherol, Sodium Hyaluronate, Glycerin',
     'As the final step in your morning routine, apply generously to face and neck at least 15 minutes before sun exposure. Reapply every 2 hours when outdoors.',
     'All Skin Types', 'Sun Protection, Anti-aging, Hyperpigmentation', 10
@@ -715,7 +725,7 @@ FROM (VALUES
     'A rich, nourishing cream with 3 essential ceramides, cholesterol and fatty acids that mimic the skin\'s natural barrier. Clinically shown to restore the skin barrier and relieve dryness within 24 hours.',
     1999.00, 'AUR-CRC-001', FALSE,
     '50ml / 1.7 fl oz',
-    'Fragrance-free · Steroid-free · Suitable for eczema-prone skin · Dermatologist tested',
+    'Fragrance-free Ã‚Â· Steroid-free Ã‚Â· Suitable for eczema-prone skin Ã‚Â· Dermatologist tested',
     'Aqua, Glycerin, Cetearyl Alcohol, Ceramide NP, Ceramide AP, Ceramide EOP, Cholesterol, Fatty Acids, Niacinamide, Panthenol',
     'Apply generously to face, neck and body morning and evening. For very dry or irritated skin, apply a thicker layer at night. Safe for sensitive skin and eczema-prone skin.',
     'Dry, Sensitive, Eczema-prone', 'Barrier Repair, Dryness, Sensitivity', 11
@@ -727,9 +737,9 @@ FROM (VALUES
     'A gentle micellar cleansing water that dissolves makeup, SPF and impurities in one sweep without rubbing or rinsing. Infused with hyaluronic acid to leave skin hydrated, not stripped.',
     799.00, 'AUR-MCW-001', FALSE,
     '200ml / 6.8 fl oz',
-    'No-rinse formula · Fragrance-free · Alcohol-free · Suitable for sensitive skin',
+    'No-rinse formula Ã‚Â· Fragrance-free Ã‚Â· Alcohol-free Ã‚Â· Suitable for sensitive skin',
     'Aqua, Poloxamer 184, Glycerin, Sodium Hyaluronate, Panthenol, Disodium EDTA, Phenoxyethanol',
-    'Saturate a cotton pad and hold against eye, lip or face for 5–10 seconds. Wipe away gently. No rinsing required. Use as a first cleanse or for quick refresh.',
+    'Saturate a cotton pad and hold against eye, lip or face for 5Ã¢â‚¬â€œ10 seconds. Wipe away gently. No rinsing required. Use as a first cleanse or for quick refresh.',
     'All Skin Types', 'Makeup Removal, Cleansing', 12
   ),
   (
@@ -739,7 +749,7 @@ FROM (VALUES
     'A gentle yet potent eye cream with triple-weight hyaluronic acid and caffeine to visibly reduce puffiness, dark circles and fine lines around the delicate eye area. Clinically tested and ophthalmologist approved.',
     1499.00, 'AUR-EYE-001', FALSE,
     '15ml / 0.5 fl oz',
-    'Ophthalmologist tested · Fragrance-free · Suitable for contact lens wearers',
+    'Ophthalmologist tested Ã‚Â· Fragrance-free Ã‚Â· Suitable for contact lens wearers',
     'Aqua, Sodium Hyaluronate (High/Mid/Low MW), Caffeine, Peptide Complex, Niacinamide, Vitamin K, Allantoin, Glycerin',
     'Using your ring finger, gently tap a small amount around the entire eye area morning and evening. Do not rub. Use before heavier creams.',
     'All Skin Types', 'Dark Circles, Puffiness, Fine Lines', 13
@@ -751,9 +761,9 @@ FROM (VALUES
     'A gentle enzyme-based exfoliating mask with papaya and pineapple enzymes that dissolve dead skin cells without physical scrubbing. Leaves skin instantly smoother, brighter and more refined in just 10 minutes.',
     1299.00, 'AUR-MSK-001', FALSE,
     '75ml / 2.5 fl oz',
-    'Vegan · Cruelty-free · No physical exfoliants · Suitable for sensitive skin',
+    'Vegan Ã‚Â· Cruelty-free Ã‚Â· No physical exfoliants Ã‚Â· Suitable for sensitive skin',
     'Aqua, Carica Papaya Fruit Extract, Bromelain (Pineapple Enzyme), Kaolin, Sodium Hyaluronate, Glycerin, Allantoin, Panthenol',
-    'Apply a thin layer to clean, dry skin. Leave for 10–15 minutes. Rinse thoroughly with warm water. Use 1–2 times per week. Avoid using with active breakouts.',
+    'Apply a thin layer to clean, dry skin. Leave for 10Ã¢â‚¬â€œ15 minutes. Rinse thoroughly with warm water. Use 1Ã¢â‚¬â€œ2 times per week. Avoid using with active breakouts.',
     'All Skin Types', 'Texture, Dullness, Pore Refinement', 14
   ),
   (
@@ -763,7 +773,7 @@ FROM (VALUES
     'A rich, non-sticky lip balm that heals, hydrates and plumps dry, chapped lips with ceramides, shea butter and hyaluronic acid. Can be used as an overnight lip mask for deeply moisturised lips by morning.',
     499.00, 'AUR-LIP-001', FALSE,
     '15ml / 0.5 fl oz',
-    'Fragrance-free · Non-sticky · Safe to ingest · Vegan',
+    'Fragrance-free Ã‚Â· Non-sticky Ã‚Â· Safe to ingest Ã‚Â· Vegan',
     'Cera Alba, Squalane, Sodium Hyaluronate, Ceramide NP, Butyrospermum Parkii (Shea) Butter, Tocopherol, Castor Oil',
     'Apply liberally throughout the day or use as an overnight lip mask before bed. Reapply as needed for continuous lip comfort.',
     'All Skin Types', 'Dryness, Chapping, Lip Care', 15
@@ -928,13 +938,13 @@ A consistent morning routine is the foundation of healthy, glowing skin. After y
 ### Step 1: Cleanse
 Begin with our **Gentle Foam Cleanser**. Even if your skin isn''t visibly dirty in the morning, overnight products, dead skin cells and excess sebum accumulate. A gentle cleanse removes these without stripping your skin''s natural barrier.
 
-*Pro tip: Use lukewarm water — hot water strips the skin''s natural oils.*
+*Pro tip: Use lukewarm water Ã¢â‚¬â€ hot water strips the skin''s natural oils.*
 
 ### Step 2: Tone
 Apply our **Niacinamide Clarifying Toner** with a cotton pad or your palms. This step balances your skin''s pH, minimises pores and preps your skin for better product absorption.
 
 ### Step 3: Treat
-Apply your targeted serum. For brightening and protection, we recommend our **Radiance Serum** or **Vitamin C Brightening Serum** in the morning. Pat gently into skin — never rub.
+Apply your targeted serum. For brightening and protection, we recommend our **Radiance Serum** or **Vitamin C Brightening Serum** in the morning. Pat gently into skin Ã¢â‚¬â€ never rub.
 
 ### Step 4: Moisturise
 Lock in the serum with our **Cloud Cream Moisturiser**. This creates a protective film that prevents transepidermal water loss throughout the day.
@@ -944,7 +954,7 @@ The non-negotiable final step: **Mineral SPF 50+**. Apply generously as the very
 
 ## Consistency Is Everything
 
-Results don''t happen overnight. Commit to this routine for at least 8 weeks to see a real transformation in your skin. Take a weekly photo in the same lighting to track your progress — you''ll be amazed.',
+Results don''t happen overnight. Commit to this routine for at least 8 weeks to see a real transformation in your skin. Take a weekly photo in the same lighting to track your progress Ã¢â‚¬â€ you''ll be amazed.',
   '/images/journal-morning.png',
   'Routine', ARRAY['Morning Routine', 'Glow', 'Skincare Basics', 'SPF'],
   'published', 'AUREVIA Editorial Team', 7,
@@ -956,7 +966,7 @@ Results don''t happen overnight. Commit to this routine for at least 8 weeks to 
   'Many people confuse hydration and moisture. Learn the science behind the difference and how to address both for truly balanced skin.',
   '## Hydration vs Moisture: What''s the Difference?
 
-One of the most common misconceptions in skincare is using "hydration" and "moisture" interchangeably. While they sound similar, they address completely different skin needs — and understanding the difference will transform your routine.
+One of the most common misconceptions in skincare is using "hydration" and "moisture" interchangeably. While they sound similar, they address completely different skin needs Ã¢â‚¬â€ and understanding the difference will transform your routine.
 
 ### What Is Hydration?
 
@@ -974,7 +984,7 @@ Hydrating ingredients draw water into the skin. Look for **humectants** like:
 
 ### What Is Moisture?
 
-Moisture refers to the **lipid barrier** — the oils and fats that form a protective seal over the skin to prevent water from evaporating. A damaged moisture barrier shows up as:
+Moisture refers to the **lipid barrier** Ã¢â‚¬â€ the oils and fats that form a protective seal over the skin to prevent water from evaporating. A damaged moisture barrier shows up as:
 - Sensitivity and redness
 - Flakiness and roughness
 - Burning or stinging from skincare products
@@ -1024,13 +1034,13 @@ When this barrier is intact, your skin is healthy, comfortable and resilient. Wh
 
 ### How to Repair Your Barrier
 
-1. **Simplify your routine** — Strip back to just cleanser, moisturiser and SPF for 2–4 weeks
-2. **Add ceramides** — Our **Ceramide Repair Cream** contains three types of ceramides that directly replenish the skin''s lipid matrix
-3. **Hydrate deeply** — Layer a hyaluronic acid serum under your moisturiser
-4. **Avoid actives** — Pause retinol, AHAs and BHAs while your barrier heals
-5. **Protect from UV** — UV damage accelerates barrier breakdown
+1. **Simplify your routine** Ã¢â‚¬â€ Strip back to just cleanser, moisturiser and SPF for 2Ã¢â‚¬â€œ4 weeks
+2. **Add ceramides** Ã¢â‚¬â€ Our **Ceramide Repair Cream** contains three types of ceramides that directly replenish the skin''s lipid matrix
+3. **Hydrate deeply** Ã¢â‚¬â€ Layer a hyaluronic acid serum under your moisturiser
+4. **Avoid actives** Ã¢â‚¬â€ Pause retinol, AHAs and BHAs while your barrier heals
+5. **Protect from UV** Ã¢â‚¬â€ UV damage accelerates barrier breakdown
 
-Most people see significant improvement in 2–4 weeks with consistent, simplified care.',
+Most people see significant improvement in 2Ã¢â‚¬â€œ4 weeks with consistent, simplified care.',
   '/images/journal-barrier.png',
   'Education', ARRAY['Skin Barrier', 'Ceramides', 'Sensitive Skin', 'Repair'],
   'published', 'AUREVIA Science Team', 9,
@@ -1050,9 +1060,9 @@ Between 11pm and 4am, your skin enters repair mode. Cell turnover increases, col
 Start with our **Micellar Cleansing Water** to dissolve sunscreen and makeup, followed by our **Gentle Foam Cleanser** for a thorough cleanse. Never sleep with SPF or makeup on.
 
 **Step 2: Treat with Actives**
-This is when to use your retinol or AHAs — never in the morning.
+This is when to use your retinol or AHAs Ã¢â‚¬â€ never in the morning.
 
-Our **Retinol Renewal Serum** at 0.3% is the sweet spot for results without irritation. Start 2–3 nights per week and build to nightly over 8–12 weeks.
+Our **Retinol Renewal Serum** at 0.3% is the sweet spot for results without irritation. Start 2Ã¢â‚¬â€œ3 nights per week and build to nightly over 8Ã¢â‚¬â€œ12 weeks.
 
 **Step 3: Peptides**
 Layer our **Peptide Firming Serum** over retinol, or use it on non-retinol nights. Peptides work beautifully overnight to stimulate collagen production.
@@ -1061,14 +1071,14 @@ Layer our **Peptide Firming Serum** over retinol, or use it on non-retinol night
 Apply the **Cloud Cream Moisturiser** to lock in all the goodness from your serums.
 
 **Step 5: Face Oil (Optional)**
-Seal everything with 4–5 drops of our **Night Recovery Oil**. Bakuchiol gently resurfaces while plant oils create a protective occlusive layer.
+Seal everything with 4Ã¢â‚¬â€œ5 drops of our **Night Recovery Oil**. Bakuchiol gently resurfaces while plant oils create a protective occlusive layer.
 
 ### Pro Tips for Better Night Skincare
 
 - Change your pillowcase weekly (cotton is best for sensitive skin)
 - Sleep on your back to prevent face creasing  
 - Keep your bedroom cool and well-humidified
-- Never skip the neck and décolletage',
+- Never skip the neck and dÃƒÂ©colletage',
   '/images/journal-night.png',
   'Ritual', ARRAY['Night Routine', 'Retinol', 'Peptides', 'Anti-aging'],
   'published', 'AUREVIA Editorial Team', 6,
@@ -1084,21 +1094,21 @@ Retinol is arguably the most researched and proven skincare ingredient for anti-
 
 ### What Is Retinol?
 
-Retinol is a form of Vitamin A that, when applied to skin, converts to retinoic acid — the active form that stimulates cell turnover, boosts collagen production and reduces the appearance of fine lines, wrinkles and dark spots.
+Retinol is a form of Vitamin A that, when applied to skin, converts to retinoic acid Ã¢â‚¬â€ the active form that stimulates cell turnover, boosts collagen production and reduces the appearance of fine lines, wrinkles and dark spots.
 
 ### The Retinol Ladder
 
 Different strengths suit different skin types and tolerances:
 
-- **0.025%** — Perfect for beginners
-- **0.05%** — Intermediate
-- **0.1%** — Intermediate to advanced
-- **0.3%** ← *This is our AUREVIA Retinol Serum*
-- **0.5–1%** — Advanced users only
+- **0.025%** Ã¢â‚¬â€ Perfect for beginners
+- **0.05%** Ã¢â‚¬â€ Intermediate
+- **0.1%** Ã¢â‚¬â€ Intermediate to advanced
+- **0.3%** Ã¢â€ Â *This is our AUREVIA Retinol Serum*
+- **0.5Ã¢â‚¬â€œ1%** Ã¢â‚¬â€ Advanced users only
 
 ### Why Encapsulated Retinol?
 
-Our Retinol Renewal Serum uses **encapsulated retinol** — tiny spheres that slowly release the active, reducing irritation dramatically while maintaining efficacy. This makes it suitable for those who''ve struggled with traditional retinol.',
+Our Retinol Renewal Serum uses **encapsulated retinol** Ã¢â‚¬â€ tiny spheres that slowly release the active, reducing irritation dramatically while maintaining efficacy. This makes it suitable for those who''ve struggled with traditional retinol.',
   '/images/journal-morning.png',
   'Science', ARRAY['Retinol', 'Anti-aging', 'Vitamin A', 'Beginners Guide'],
   'published', 'Dr. Priya Rao, Dermatologist', 10,
@@ -1123,11 +1133,11 @@ ON CONFLICT (code) DO NOTHING;
 INSERT INTO public.site_settings (key, value) VALUES
   ('hero_headline', '"Skin That Speaks\nFor Itself"'),
   ('hero_subtitle', '"Dermatologist-tested formulas. Clean ingredients. Effortless results."'),
-  ('announcement_bar', '"Free Shipping on Orders Above ₹999 · 100% Clean Beauty · Dermatologist Tested"'),
+  ('announcement_bar', '"Free Shipping on Orders Above Ã¢â€šÂ¹999 Ã‚Â· 100% Clean Beauty Ã‚Â· Dermatologist Tested"'),
   ('footer_tagline', '"Luxury skincare crafted for naturally radiant Indian skin."'),
   ('free_shipping_threshold', '999'),
   ('currency', '"INR"'),
-  ('currency_symbol', '"₹"'),
+  ('currency_symbol', '"Ã¢â€šÂ¹"'),
   ('store_name', '"AUREVIA SKIN"'),
   ('store_phone', '"+91 98765 43210"'),
   ('store_email', '"hello@aureviaskin.com"'),

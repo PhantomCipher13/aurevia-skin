@@ -48,7 +48,7 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [sb, router, pathname]);
+  }, [router, pathname]);
 
   if (!authorized) {
     return (
