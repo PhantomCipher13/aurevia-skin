@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
 import { useAuth } from "@/components/AuthProvider";
+import CartDrawer from "@/components/CartDrawer";
 
 const navLinks = [
   { label: "Products", href: "/#bestsellers" },
@@ -18,6 +19,7 @@ const navLinks = [
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { itemCount } = useCart();
   const { isAuthenticated, user } = useAuth();
 
@@ -26,6 +28,12 @@ export default function Navigation() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Lock body scroll when cart is open
+  useEffect(() => {
+    document.body.style.overflow = isCartOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isCartOpen]);
 
   return (
     <>
@@ -142,8 +150,9 @@ export default function Navigation() {
                   )}
                 </Link>
 
-                <Link
-                  href="/checkout"
+                {/* Cart button — opens drawer */}
+                <button
+                  onClick={() => setIsCartOpen(true)}
                   aria-label="Shopping bag"
                   className="p-2 relative transition-colors duration-300 hover:text-[#C7A064]"
                   style={{ color: "#493E36" }}
@@ -163,7 +172,7 @@ export default function Navigation() {
                       {itemCount}
                     </motion.span>
                   )}
-                </Link>
+                </button>
 
                 <div className="w-[1px] h-5 mx-1" style={{ background: "#EAD9C3" }} />
 
@@ -180,30 +189,53 @@ export default function Navigation() {
                 </Link>
               </div>
 
-              {/* Mobile menu toggle */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden flex flex-col gap-[5px] p-2"
-                aria-label="Toggle menu"
-              >
-                <motion.span
-                  animate={isMobileMenuOpen ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="block w-5 h-[1.5px]"
-                  style={{ background: "#342A24" }}
-                />
-                <motion.span
-                  animate={isMobileMenuOpen ? { opacity: 0 } : { opacity: 1 }}
-                  className="block w-5 h-[1.5px]"
-                  style={{ background: "#342A24" }}
-                />
-                <motion.span
-                  animate={isMobileMenuOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="block w-5 h-[1.5px]"
-                  style={{ background: "#342A24" }}
-                />
-              </button>
+              {/* Mobile: cart + menu toggle */}
+              <div className="flex lg:hidden items-center gap-2">
+                {/* Mobile cart button */}
+                <button
+                  onClick={() => setIsCartOpen(true)}
+                  aria-label="Shopping bag"
+                  className="p-2 relative"
+                  style={{ color: "#342A24" }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                  {itemCount > 0 && (
+                    <span
+                      className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full text-[8px] font-semibold flex items-center justify-center"
+                      style={{ background: "#C7A064", color: "#FFFFFF" }}
+                    >
+                      {itemCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Hamburger */}
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="flex flex-col gap-[5px] p-2"
+                  aria-label="Toggle menu"
+                >
+                  <motion.span
+                    animate={isMobileMenuOpen ? { rotate: 45, y: 7 } : { rotate: 0, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="block w-5 h-[1.5px]"
+                    style={{ background: "#342A24" }}
+                  />
+                  <motion.span
+                    animate={isMobileMenuOpen ? { opacity: 0 } : { opacity: 1 }}
+                    className="block w-5 h-[1.5px]"
+                    style={{ background: "#342A24" }}
+                  />
+                  <motion.span
+                    animate={isMobileMenuOpen ? { rotate: -45, y: -7 } : { rotate: 0, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="block w-5 h-[1.5px]"
+                    style={{ background: "#342A24" }}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </nav>
@@ -268,6 +300,9 @@ export default function Navigation() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Cart Drawer */}
+      <CartDrawer open={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>
   );
 }
