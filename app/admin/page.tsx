@@ -7,7 +7,7 @@ import AdminHeader from "./components/AdminHeader";
 import { createClient } from "@/lib/supabase/client";
 
 const ease = [0.16, 1, 0.3, 1] as const;
-const inr  = (n: number) => "â‚¹" + Math.round(n).toLocaleString("en-IN");
+const inr  = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
 
 type Period = "today" | "week" | "month";
 
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <AdminHeader title="Dashboard" subtitle="Welcome back â€” here's what's happening" />
+      <AdminHeader title="Dashboard" subtitle="Welcome back — here's what's happening" />
 
       <div className="flex-1 p-6 md:p-8 space-y-7">
 
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
                 Recent Orders
               </h3>
               <Link href="/admin/orders" className="text-[11px] tracking-[0.07em] uppercase"
-                style={{ color: "#C7A064", fontFamily: "var(--font-body)" }}>View All â†’</Link>
+                style={{ color: "#C7A064", fontFamily: "var(--font-body)" }}>View All →</Link>
             </div>
 
             {loading ? (
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
                             style={{ ...st, fontFamily: "var(--font-body)" }}>{order.status}</span>
                         </div>
                         <p className="text-[11px] truncate" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.35)" }}>
-                          {order.order_items?.[0]?.product_name ?? "â€”"}
+                          {order.order_items?.[0]?.product_name ?? "—"}
                           {order.order_items?.length > 1 ? ` +${order.order_items.length - 1} more` : ""}
                         </p>
                       </div>
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
                 </div>
                 <Link href="/admin/inventory" className="block mt-3 text-[10px] tracking-[0.1em] uppercase"
                   style={{ color: "#ca8a04", fontFamily: "var(--font-body)" }}>
-                  Manage Inventory â†’
+                  Manage Inventory →
                 </Link>
               </div>
             )}
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
                   <Link key={a.href} href={a.href}
                     className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-white/[0.03] transition-colors group">
                     <span className="text-[12px]" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.55)" }}>{a.label}</span>
-                    <span style={{ color: "rgba(199,160,100,0.4)" }} className="group-hover:translate-x-0.5 transition-transform">â†’</span>
+                    <span style={{ color: "rgba(199,160,100,0.4)" }} className="group-hover:translate-x-0.5 transition-transform">→</span>
                   </Link>
                 ))}
               </div>
