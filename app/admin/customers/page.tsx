@@ -1,30 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import AdminHeader from "../components/AdminHeader";
+import { createClient } from "@/lib/supabase/client";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-const mockCustomers = [
-  { id: "1", name: "Priya Sharma", email: "priya@example.com", phone: "+91 98765 43210", orders: 8, totalSpend: 712.00, joined: "2024-03-12", lastOrder: "2025-07-14", status: "active" },
-  { id: "2", name: "Ananya Gupta", email: "ananya@example.com", phone: "+91 91234 56789", orders: 5, totalSpend: 452.00, joined: "2024-06-20", lastOrder: "2025-07-14", status: "active" },
-  { id: "3", name: "Rhea Mehta", email: "rhea@example.com", phone: "+91 88888 77777", orders: 3, totalSpend: 231.00, joined: "2024-09-08", lastOrder: "2025-07-13", status: "active" },
-  { id: "4", name: "Simran Kaur", email: "simran@example.com", phone: "+91 77777 66666", orders: 12, totalSpend: 1104.00, joined: "2023-11-15", lastOrder: "2025-07-13", status: "active" },
-  { id: "5", name: "Kavya Reddy", email: "kavya@example.com", phone: "+91 66666 55555", orders: 1, totalSpend: 178.00, joined: "2025-07-12", lastOrder: "2025-07-12", status: "active" },
-];
+type Customer = {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  created_at: string;
+  orderCount: number;
+  totalSpent: number;
+};
 
 export default function AdminCustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalCustomers: 0, totalRevenue: 0 });
 
-  const filtered = mockCustomers.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    async function fetchCustomers() {
+      const supabase = createClient();
+      
+      const [
+        { data: profiles },
+        { data: orders }
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, phone, is_admin, created_at")
+          .eq("is_admin", false)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("orders")
+          .select("user_id, total, payment_status")
+      ]);
+
+      if (profiles) {
+        let totalRev = 0;
+        
+        const customerData = profiles.map((p) => {
+          const customerOrders = orders?.filter((o) => o.user_id === p.id) || [];
+          const customerTotalSpent = customerOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+          
+          // Calculate overall paid revenue for stats
+          const paidOrders = customerOrders.filter(o => o.payment_status === 'paid' || o.payment_status === 'succeeded');
+          totalRev += paidOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
+          return {
+            id: p.id,
+            full_name: p.full_name,
+            phone: p.phone,
+            created_at: p.created_at,
+            orderCount: customerOrders.length,
+            totalSpent: customerTotalSpent,
+          };
+        });
+        
+        setCustomers(customerData);
+        setStats({
+          totalCustomers: customerData.length,
+          totalRevenue: totalRev
+        });
+      }
+      setLoading(false);
+    }
+    
+    fetchCustomers();
+  }, []);
+
+  const filtered = customers.filter((c) => {
+    const name = c.full_name || "Customer";
+    return name.toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="flex-1 flex flex-col">
-      <AdminHeader title="Customers" subtitle={`${mockCustomers.length} customers total`} />
+      <AdminHeader title="Customers" subtitle={`${customers.length} customers total`} />
 
       <div className="flex-1 p-8">
         {/* Search */}
@@ -43,18 +99,17 @@ export default function AdminCustomersPage() {
               placeholder="Search customers..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl text-[13px] outline-none"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl text-[13px] outline-none placeholder-white/30"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(199,160,100,0.12)", color: "#EAD9C3", fontFamily: "var(--font-body)" }}
             />
           </div>
         </motion.div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           {[
-            { label: "Total Customers", value: mockCustomers.length.toString() },
-            { label: "Avg. Order Value", value: "₹1,899" },
-            { label: "Repeat Buyers", value: `${mockCustomers.filter(c => c.orders > 1).length}` },
+            { label: "Total Customers", value: stats.totalCustomers.toString() },
+            { label: "Total Revenue (Paid)", value: `₹${stats.totalRevenue.toLocaleString()}` },
           ].map((s, i) => (
             <motion.div
               key={s.label}
@@ -81,7 +136,7 @@ export default function AdminCustomersPage() {
           <div
             className="grid px-6 py-3 text-[10px] tracking-[0.15em] uppercase gap-4"
             style={{
-              gridTemplateColumns: "1fr 120px 80px 120px 120px",
+              gridTemplateColumns: "1fr 120px 100px 120px",
               background: "rgba(255,255,255,0.02)",
               borderBottom: "1px solid rgba(199,160,100,0.06)",
               fontFamily: "var(--font-body)",
@@ -92,49 +147,68 @@ export default function AdminCustomersPage() {
             <span>Joined</span>
             <span>Orders</span>
             <span>Total Spent</span>
-            <span>Last Order</span>
           </div>
+          
+          {loading ? (
+            <div className="px-6 py-8 text-center text-[13px]" style={{ color: "rgba(234,217,195,0.5)", fontFamily: "var(--font-body)" }}>
+              Loading customers...
+            </div>
+          ) : customers.length === 0 ? (
+            <div className="px-6 py-8 text-center text-[13px]" style={{ color: "rgba(234,217,195,0.5)", fontFamily: "var(--font-body)" }}>
+              No customers found.
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="px-6 py-8 text-center text-[13px]" style={{ color: "rgba(234,217,195,0.5)", fontFamily: "var(--font-body)" }}>
+              No customers match your search.
+            </div>
+          ) : (
+            filtered.map((customer, i) => {
+              const displayName = customer.full_name || "Customer";
+              const initial = displayName.charAt(0).toUpperCase();
 
-          {filtered.map((customer, i) => (
-            <motion.div
-              key={customer.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.04 }}
-              className="grid items-center px-6 py-4 gap-4 hover:bg-white/[0.015] transition-colors cursor-pointer"
-              style={{
-                gridTemplateColumns: "1fr 120px 80px 120px 120px",
-                borderBottom: i < filtered.length - 1 ? "1px solid rgba(199,160,100,0.04)" : "none",
-              }}
-            >
-              <div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold flex-shrink-0"
-                    style={{ background: "rgba(199,160,100,0.15)", color: "#C7A064" }}
-                  >
-                    {customer.name.charAt(0)}
-                  </div>
+              return (
+                <motion.div
+                  key={customer.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="grid items-center px-6 py-4 gap-4 hover:bg-white/[0.015] transition-colors"
+                  style={{
+                    gridTemplateColumns: "1fr 120px 100px 120px",
+                    borderBottom: i < filtered.length - 1 ? "1px solid rgba(199,160,100,0.04)" : "none",
+                  }}
+                >
                   <div>
-                    <p className="text-[13px] font-medium" style={{ fontFamily: "var(--font-body)", color: "#EAD9C3" }}>{customer.name}</p>
-                    <p className="text-[11px]" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.4)" }}>{customer.email}</p>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold flex-shrink-0"
+                        style={{ background: "rgba(199,160,100,0.15)", color: "#C7A064" }}
+                      >
+                        {initial}
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-medium" style={{ fontFamily: "var(--font-body)", color: "#EAD9C3" }}>
+                          {customer.full_name || "Unknown"}
+                        </p>
+                        <p className="text-[11px]" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.4)" }}>
+                          {!customer.full_name ? "Customer" : customer.phone || "No phone"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <span className="text-[12px]" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.5)" }}>
-                {new Date(customer.joined).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-              </span>
-              <span className="text-[13px] font-medium" style={{ fontFamily: "var(--font-body)", color: "#EAD9C3" }}>
-                {customer.orders}
-              </span>
-              <span className="text-[13px] font-medium" style={{ fontFamily: "var(--font-body)", color: "#C7A064" }}>
-                ₹{customer.totalSpend}
-              </span>
-              <span className="text-[12px]" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.5)" }}>
-                {new Date(customer.lastOrder).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              </span>
-            </motion.div>
-          ))}
+                  <span className="text-[12px]" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.5)" }}>
+                    {new Date(customer.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                  </span>
+                  <span className="text-[13px] font-medium" style={{ fontFamily: "var(--font-body)", color: "#EAD9C3" }}>
+                    {customer.orderCount}
+                  </span>
+                  <span className="text-[13px] font-medium" style={{ fontFamily: "var(--font-body)", color: "#C7A064" }}>
+                    ₹{customer.totalSpent.toLocaleString()}
+                  </span>
+                </motion.div>
+              );
+            })
+          )}
         </motion.div>
       </div>
     </div>

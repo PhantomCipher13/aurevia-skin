@@ -3,10 +3,11 @@
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useCart } from "@/components/CartProvider";
 import { useToast } from "@/components/ToastProvider";
 import { useWishlist } from "@/components/WishlistProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { getFeaturedProducts, getPrimaryImage, formatPrice, type Product } from "@/lib/supabase/products";
 
 // Static fallback products while Supabase loads
@@ -120,16 +121,81 @@ function ProductCard({
   const cardInView = useInView(cardRef, { once: true, margin: "-80px" });
   const { addItem } = useCart();
   const { showToast } = useToast();
+  const { user } = useAuth();
   const img = getPrimaryImage(product);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
     addItem({ productId: product.id, name: product.name, price: product.sale_price ?? product.price, image: img ?? "", slug: product.slug, quantity: 1 });
     showToast(`${product.name} added to bag`, "cart", formatPrice(product.sale_price ?? product.price));
   };
 
   return (
+    <>
+      {/* Login Required Modal */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center px-4"
+            style={{ background: "rgba(13,11,9,0.85)", backdropFilter: "blur(12px)" }}
+            onClick={() => setShowLoginModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 24 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-sm rounded-3xl p-8 text-center"
+              style={{ background: "#1C1410", border: "1px solid rgba(199,160,100,0.2)", boxShadow: "0 32px 80px rgba(0,0,0,0.5)" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: "rgba(199,160,100,0.12)" }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7A064" strokeWidth="1.5">
+                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="3" y1="6" x2="21" y2="6" strokeLinecap="round"/>
+                  <path d="M16 10a4 4 0 01-8 0" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 className="text-[22px] mb-2" style={{ fontFamily: "var(--font-heading)", color: "#EAD9C3" }}>Sign in to Shop</h3>
+              <p className="text-[13px] mb-7 leading-relaxed" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.5)" }}>
+                Create a free account or sign in to add items to your cart and checkout seamlessly.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link
+                  href={`/auth/login?redirect=${encodeURIComponent("/products/" + product.slug)}`}
+                  className="w-full py-3.5 rounded-xl text-[12px] tracking-[0.12em] uppercase font-semibold"
+                  style={{ background: "#C7A064", color: "#fff", fontFamily: "var(--font-body)", display: "block" }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href={`/auth/register?redirect=${encodeURIComponent("/products/" + product.slug)}`}
+                  className="w-full py-3.5 rounded-xl text-[12px] tracking-[0.12em] uppercase font-semibold"
+                  style={{ background: "transparent", color: "#EAD9C3", border: "1px solid rgba(199,160,100,0.25)", fontFamily: "var(--font-body)", display: "block" }}
+                >
+                  Create Account
+                </Link>
+                <button
+                  onClick={() => setShowLoginModal(false)}
+                  className="text-[11px] mt-1"
+                  style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.3)" }}
+                >
+                  Continue Browsing
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     <motion.article
       ref={cardRef}
       initial={{ opacity: 0, y: 60 }}
@@ -243,6 +309,7 @@ function ProductCard({
         </div>
       </Link>
     </motion.article>
+    </>
   );
 }
 

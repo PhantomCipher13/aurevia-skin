@@ -30,6 +30,7 @@ export default function ProductPage() {
   const [tab, setTab] = useState<Tab>("description");
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Review form
   const [reviewForm, setRevForm] = useState({ rating: 5, title: "", body: "", skin_type: "" });
@@ -57,6 +58,11 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     if (!product) return;
+    // Require login before adding to cart
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
     setAdding(true);
     await addItem({
       productId: product.id,
@@ -126,6 +132,67 @@ export default function ProductPage() {
 
   return (
     <div style={{ background: "#FBF8F4", minHeight: "100vh" }}>
+
+      {/* ── Login Required Modal ── */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center px-4"
+            style={{ background: "rgba(13,11,9,0.85)", backdropFilter: "blur(12px)" }}
+            onClick={() => setShowLoginModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 24 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-sm rounded-3xl p-8 text-center"
+              style={{ background: "#1C1410", border: "1px solid rgba(199,160,100,0.2)", boxShadow: "0 32px 80px rgba(0,0,0,0.5)" }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Icon */}
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: "rgba(199,160,100,0.12)" }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C7A064" strokeWidth="1.5">
+                  <path d="M20 12V22H4V12" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M22 7H2v5h20V7z" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 className="text-[22px] mb-2" style={{ fontFamily: "var(--font-heading)", color: "#EAD9C3" }}>Sign in to Shop</h3>
+              <p className="text-[13px] mb-7 leading-relaxed" style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.5)" }}>
+                Create a free account or sign in to add items to your cart and checkout seamlessly.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link
+                  href={`/auth/login?redirect=${encodeURIComponent("/products/" + slug)}`}
+                  className="w-full py-3.5 rounded-xl text-[12px] tracking-[0.12em] uppercase font-semibold transition-all duration-300"
+                  style={{ background: "#C7A064", color: "#fff", fontFamily: "var(--font-body)", display: "block" }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href={`/auth/register?redirect=${encodeURIComponent("/products/" + slug)}`}
+                  className="w-full py-3.5 rounded-xl text-[12px] tracking-[0.12em] uppercase font-semibold transition-all duration-300"
+                  style={{ background: "transparent", color: "#EAD9C3", border: "1px solid rgba(199,160,100,0.25)", fontFamily: "var(--font-body)", display: "block" }}
+                >
+                  Create Account
+                </Link>
+                <button
+                  onClick={() => setShowLoginModal(false)}
+                  className="text-[11px] mt-1 transition-colors"
+                  style={{ fontFamily: "var(--font-body)", color: "rgba(234,217,195,0.3)" }}
+                >
+                  Continue Browsing
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-7xl mx-auto px-6 pt-28 pb-20">
 
         {/* Breadcrumb */}
