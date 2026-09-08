@@ -40,10 +40,11 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // ── Admin routes ─────────────────────────────────────────────
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+  if (pathname.startsWith("/admin")) {
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
+      // Use the single unified login page — it auto-routes admins to /admin after sign-in
+      url.pathname = "/auth/login";
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }

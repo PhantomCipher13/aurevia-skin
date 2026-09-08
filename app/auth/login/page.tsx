@@ -23,6 +23,7 @@ function LoginForm() {
   // Auto-redirect if already logged in
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
+      // Admins go to the dashboard, customers go to their account
       router.replace(isAdmin ? "/admin" : redirect);
     }
   }, [authLoading, isAuthenticated, isAdmin, redirect, router]);
@@ -39,6 +40,7 @@ function LoginForm() {
       setLoading(false);
       return;
     }
+    // The useEffect above handles the redirect once auth state resolves
   };
 
   if (authLoading) return null;
@@ -134,7 +136,7 @@ function LoginForm() {
             <button type="submit" disabled={loading}
               className="w-full py-3.5 rounded-xl text-[12px] tracking-[0.12em] uppercase font-semibold transition-all mt-2"
               style={{ background: loading ? "rgba(199,160,100,0.5)" : "#C7A064", color: "#fff", fontFamily: "var(--font-body)" }}>
-              {loading ? "Signing InÃ¢â‚¬Â¦" : "Sign In"}
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
@@ -146,15 +148,7 @@ function LoginForm() {
             </Link>
           </p>
 
-          {/* Admin separator */}
-          <div className="mt-6 pt-5" style={{ borderTop: "1px solid rgba(199,160,100,0.1)" }}>
-            <p className="text-center text-[11px]" style={{ fontFamily: "var(--font-body)", color: "rgba(26,20,16,0.3)" }}>
-              Admin access?{" "}
-              <Link href="/admin/login" className="underline" style={{ color: "rgba(199,160,100,0.7)" }}>
-                Go to Admin Login
-              </Link>
-            </p>
-          </div>
+
         </div>
       </motion.div>
     </div>
